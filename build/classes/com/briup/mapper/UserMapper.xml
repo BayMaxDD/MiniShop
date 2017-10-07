@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.briup.mapper.UserMapper">
+	<insert id="regist" parameterType="User">
+		insert into 
+		user 
+		values(#{uid},#{username},#{password},#{name},#{email},
+		#{telephone},#{birthday},#{sex},#{state},#{code})
+	</insert>
+	<update id="active" parameterType="String">
+		update user
+		set state=1
+		where code=#{activeCode}
+	</update>
+	<select id="checkUsername" parameterType="String"
+			resultType="int">
+		select count(*)
+		from user
+		where username=#{name}
+	</select>
+	<select id="login"
+			resultType="User">
+		select *
+		from user
+		where username=#{0} and password=#{1}
+	</select>
+	<!--管理员登陆  -->
+	<select id="managerLogin"
+			resultType="Manager">
+		select *
+		from manager
+		where name=#{0} and password=#{1}		
+	</select>
+</mapper>

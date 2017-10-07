@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+<mapper namespace="com.briup.mapper.ProductMapper">
+	<!--嵌套结果进行级联查询  -->
+	<select id="findHotProductList"
+			resultMap="findProductNotContainCategory">
+		select *
+		from product
+		where is_hot=1
+		limit 0,9
+	</select>
+	<resultMap type="Product" 
+			   id="findProductNotContainCategory">
+		<id property="pid" column="pid" /> 
+		<result property="pname" column="pname"/>
+		<result property="market_price" column="market_price"/>
+		<result property="shop_price" column="shop_price"/>
+		<result property="pimage" column="pimage"/>
+		<result property="pdate" column="pdate"/>
+		<result property="is_hot" column="is_hot"/>
+		<result property="pdesc" column="pdesc"/>
+		<result property="pflag" column="pflag"/>
+		<association property="category" column="cid"
+					 select="findProductCategoryById">
+		</association>
+	</resultMap>
+	<select id="findProductCategoryById"
+			parameterType="int"
+			resultMap="findCategory">
+			select * 
+			from category
+			where cid=#{cid}
+	</select>
+	<resultMap type="Category" id="findCategory">
+		<id property="cid" column="cid" /> 
+		<result property="cname" column="cname"/>
+	</resultMap>
+	
+	<!--查询最新商品  -->
+	<select id="findNewProductList"
+			resultMap="findProductNotContainCategory">
+		select * 
+		from product
+		order by pdate desc
+		limit 0,9
+	</select>
+	
+	<!--导航栏  -->
+	<select id="allCategory"
+			resultType="Category">
+		select *
+		from category
+	</select>
+	
+	<!--查询某一类型下商品的数量  -->
+	<select id="findAllProductByCid"
+			parameterType="String"
+			resultType="int">
+		select count(*)
+		from product
+		where cid=#{cid}
+	</select>
+	<!--分页查找某一类型的数据  -->
+	<select id="findCategoryList"
+			resultMap="findProductNotContainCategory">
+		select * 
+		from product 
+		where cid=#{0} limit #{1},#{2}
+	</select>
+	<!--查询某一商品的具体信息  -->
+	<select id="findProductByPid"
+			parameterType="String"
+			resultType="Product">
+		select *
+		from product
+		where pid=#{pid}
+	</select>
+	<!--提交订单  -->
+	<insert id="addOrder" parameterType="Order">
+		insert into
+		orders
+		values(#{oid},#{ordertime},#{total},#{state},#{address},#{name},#{telephone},#{user.uid})
+	</insert>
+	<!--提交订单项  -->
+	<insert id="addOrderItem" parameterType="OrderItem">
+		insert into
+		orderitem
+		values(#{itemid},#{count},#{subtotal},#{product.pid},#{order.oid})
+	</insert>
+	<!--确认订单  -->
+	<update id="confirmOrder" parameterType="Order">
+		update orders
+		set address=#{address},name=#{name},telephone=#{telephone}
+		where oid=#{oid}
+	</update>
+	<!--所有订单信息  -->
+	<select id="findAllOrders" 
+			parameterType="String"
+			resultType="Order">
+		select *
+		from orders
+		where uid = #{uid}
+	</select>
+	<!--订单信息下的订单项
+		级联查询:使用基本的嵌套结果集  -->
+	<select id="findAllOrderItemByOid"
+			parameterType="String"
+			resultMap="AllOrderItem">
+		select p.pimage,p.pname,p.shop_price,o.count,o.subtotal
+		from product p,orderitem o
+		where p.pid = o.pid and oid = #{oid}
+	</select>
+	<resultMap type="OrderItem" id="AllOrderItem">
+		<result property="count" column="count" />
+		<result property="subtotal" column="subtotal" />
+		<association property="product"
+					 resultMap="ProductInOrderItem"></association>
+	</resultMap>
+	<resultMap type="Product" id="ProductInOrderItem">
+		<id property="pid" column="pid" /> 
+	 	<result property="pimage" column="pimage" />
+	 	<result property="pname" column="pname" />
+	 	<result property="shop_price" column="shop_price" /> 
+	</resultMap>
+	
+	<!--添加Category项  -->
+	<insert id="addCategory" parameterType="Category">
+		insert into
+		category
+		values(#{cid},#{cname})
+	</insert>
+	
+	<!--编辑Category信息  -->
+	<update id="editCategory" parameterType="Category">
+		update category
+		set cname=#{cname}
+		where cid=#{cid}
+	</update>
+	<!--删除Category信息  -->
+	<delete id="deleteCategory" parameterType="String">
+		delete
+		from category
+		where cid=#{cid}
+	</delete>
+
+	<!--添加商品  -->
+	<insert id="addProduct"
+			parameterType="Product">
+		insert into
+		product
+		values(#{pid},#{pname},#{market_price},#{shop_price},
+		#{pimage},#{pdate},#{is_hot},#{pdesc},#{pflag},#{category.cid});
+	</insert>
+	<!--修改商品  -->
+	<update id="updateProduct"
+			parameterType="Product">
+		update product
+		set pid=#{pid},pname=#{pname},market_price=#{market_price},
+			shop_price=#{shop_price},pimage=#{pimage},pdate=#{pdate},
+			is_hot=#{is_hot},pdesc=#{pdesc},pflag=#{pflag},cid=#{category.cid}
+		where pid=#{pid}
+	</update>
+	
+	<!--得到商品数量  -->
+	<select id="findAllProductCount" resultType="int">
+		select count(*)
+		from product	
+	</select>
+	<!--得到全部商品  -->
+	<select id="ProductList" resultMap="findProductNotContainCategory">
+		select * 
+		from product
+		order by pdate desc
+		limit #{0},#{1}
+	</select>
+	<!--删除某一商品  -->
+	<delete id="deleteProductByPid" parameterType="String">
+		delete 
+		from product
+		where pid=#{pid}
+	</delete>
+	<!--管理员的到所有的订单项  -->
+	<select id="orderList" resultType="Order">
+		select *
+		from orders
+	</select>
+</mapper>
